@@ -112,7 +112,31 @@ class Handler:
         process_nodes(node.body)
 
         tabout()
+
         tabwriteln("End While")
+
+    def If(self, node):
+
+        tabwrite("If ")
+        process_node(node.test)
+        writeln("")
+        tabin()
+
+        process_nodes(node.body)
+
+        tabout()
+
+        if (node.orelse):
+
+            if (len(node.orelse) > 1):
+                err("Can't have more than one else block", node)
+            
+            tabwriteln("Else")
+            tabin()
+            process_node(node.orelse[0])
+            tabout()
+            
+        tabwriteln("End If")
 
     # Expressions
 
