@@ -99,17 +99,63 @@ class Handler:
         process_node(node.value)
         writeln("")
 
+    def While(self, node):
+
+        if node.orelse:
+            err("else clause on while is not supported", node)
+
+        tabwrite("While ")
+        process_node(node.test)
+        writeln("")
+        tabin()
+
+        process_nodes(node.body)
+
+        tabout()
+        tabwriteln("End While")
+
     # Expressions
 
     def Str(self, node):
         write(repr(node.s))
 
+    def Num(self, node):
+        write(repr(node.n))
+
     def BinOp(self, node):
+        write("(")
         process_node(node.left)
         write(" ")
         process_node(node.op)
         write(" ")
         process_node(node.right)
+        write(")")
+
+    def UnaryOp(self, node):
+        process_node(node.op)
+        write(" ")
+        process_node(node.operand)
+
+    def BoolOp(self, node):
+        op_str = " " + capture_node(node.op) + " "
+        write("(")
+        write(op_str.join(capture_nodes(node.values)))
+        write(")")
+
+    def Compare(self, node):
+        if len(node.ops) > 1:
+            err("Only one operator allowed in compare expr", node)
+
+        op = node.ops[0]
+        right = node.comparators[0]
+
+        write("(")
+        process_node(node.left)
+        write(" ")
+        process_node(op)
+        write(" ")
+        process_node(right)
+        write(")")
 
     def Attribute(self, node):
         process_node(node.value)
@@ -117,7 +163,16 @@ class Handler:
         write(node.attr)
 
     def Name(self, node):
-        write(node.id)
+        name = node.id
+
+        if name == "True":
+            name = "true"
+        elif name == "False":
+            name = "false"
+        elif name == "None":
+            name = "invalid"
+
+        write(name)
 
     def Call(self, node):
 
@@ -135,6 +190,15 @@ class Handler:
         process_nodes(node.keywords)
 
     Add = _lit("+")
+    Sub = _lit("-")
+    Gt = _lit(">")
+    Lt = _lit("<")
+    Eq = _lit("=")
+    GtE = _lit(">=")
+    LtE = _lit("<=")
+    And = _lit("AND")
+    Or = _lit("OR")
+    Not = _lit("NOT")
 
     # Default function used for unhandled stuff
     def _default(self, node):
