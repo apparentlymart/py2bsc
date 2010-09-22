@@ -238,8 +238,20 @@ class Handler:
         write("[")
         write(", ".join(capture_nodes(node.elts)))
         write("]")
-
     List = Tuple
+
+    def Dict(self, node):
+        write("{")
+        for i in range(0, len(node.keys)):
+            if i > 0:
+                write(", ")
+            key = node.keys[i]
+            value = node.values[i]
+            process_node(key)
+            write(": ")
+            process_node(value)
+        write("}")
+            
 
     Add = _lit("+")
     Sub = _lit("-")
