@@ -46,6 +46,8 @@ def _lit(string):
 
 class Handler:
 
+    assign_prefix_stack = []
+
     # Statements
 
     def Module(self, node):
@@ -60,7 +62,10 @@ class Handler:
             name = node.name
         else:
             name = ""
-        tabwrite("Function %s(" % (name))
+        if len(self.assign_prefix_stack) > 0:
+            tabwrite(self.assign_prefix_stack[-1]+"."+name+" = Function (")
+        else:
+            tabwrite("Function %s(" % (name))
 
         bs_args = []
 
@@ -90,7 +95,10 @@ class Handler:
         if lvalue.__class__.__name__ == "Tuple":
             err("Can't assign to a tuple", node)
 
-        tabwrite(lvalue.id + " = ")
+        if len(self.assign_prefix_stack) > 0:
+            tabwrite(self.assign_prefix_stack[-1]+"."+lvalue.id+" = ")
+        else:
+            tabwrite(lvalue.id + " = ")
         process_node(node.value)
         writeln("")
 
@@ -152,6 +160,44 @@ class Handler:
         tabout()
         tabwriteln("Next")
         
+    def ClassDef(self, node):
+
+        if len(node.decorator_list) > 0:
+            err("Class decorators are not supported", node)
+
+        if len(node.bases) > 1:
+            err("Multiple inheritence is not supported", node)
+
+        base = None
+        if len(node.bases) > 0:
+            base = node.bases[0]
+        
+        # Since BrightScript doesn't have classes, we just compile a
+        # class to be a function that returns a dictionary based on
+        # the class body, which mostly mimicks Python's object support.
+        tabwrite("Function ")
+        writeln(node.name + "()")
+        tabin()
+
+        if base:
+            tabwrite("m = ")
+            process_node(base)
+            writeln("()")
+        else:
+            tabwriteln("m = {}")
+        
+        self.assign_prefix_stack.append("m")
+        process_nodes(node.body)
+        self.assign_prefix_stack.pop()
+
+        # FIXME: Find the __init__ function ahead of time and
+        # figure out what params it has so that we can make the
+        # "class" function accept them and copy them through to
+        # the init function.
+        tabwriteln("If m.__init__ Then m.__init__()")
+        tabwriteln("Return m")
+        tabout()
+        writeln("End Function")
 
     # Expressions
 
