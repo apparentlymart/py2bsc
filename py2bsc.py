@@ -138,6 +138,21 @@ class Handler:
             
         tabwriteln("End If")
 
+    def For(self, node):
+        if node.orelse:
+            err("Can't use an else block on a for statement", node)
+
+        tabwrite("For ")
+        process_node(node.target)
+        write(" In ")
+        process_node(node.iter)
+        writeln("")
+        tabin()
+        process_nodes(node.body)
+        tabout()
+        tabwriteln("Next")
+        
+
     # Expressions
 
     def Str(self, node):
@@ -212,6 +227,19 @@ class Handler:
         write(", ".join(capture_nodes(node.args)))
         write(")")
         process_nodes(node.keywords)
+
+    def Subscript(self, node):
+        process_node(node.value)
+        write("[")
+        process_node(node.slice.value)
+        write("]")
+
+    def Tuple(self, node):
+        write("[")
+        write(", ".join(capture_nodes(node.elts)))
+        write("]")
+
+    List = Tuple
 
     Add = _lit("+")
     Sub = _lit("-")
